@@ -1,0 +1,76 @@
+import tensorflow as tf
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import random
+import pandas as pd
+import numpy as np
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D
+from tensorflow.keras.optimizers import Adam
+
+# Load the CSV files
+mnist_train = pd.read_csv('mnist_train.csv')
+mnist_test = pd.read_csv('mnist_test.csv')
+
+# Separate features (pixels) and labels
+x_train = mnist_train.iloc[:, 1:].values  # All rows, all columns except the first one (features)
+y_train = mnist_train.iloc[:, 0].values   # First column only (labels)
+x_test = mnist_test.iloc[:, 1:].values
+y_test = mnist_test.iloc[:, 0].values
+
+# Normalize the features (pixels)
+x_train = x_train/255.0
+x_test = x_test/ 255.0
+
+
+model=keras.Sequential([
+    keras.layers.Flatten(input_shape=(28,28)),
+    keras.layers.Dense(128,activation="relu"),
+    keras.layers.Dense(10,activation="softmax")
+])
+
+model.compile(optimizer="sgd",
+loss="sparse_categorical_crossentropy",
+metrics=['accuracy'])
+
+x_train = x_train.reshape(-1, 28, 28, 1)
+x_test = x_test.reshape(-1, 28, 28, 1)
+
+# Check if the reshaping is correct
+print(x_train.shape)  # Should print (num_samples, 28, 28, 1)
+print(x_test.shape) 
+
+history=model.fit(x_train,
+y_train,validation_data=(x_test,y_test),epochs=10)
+
+test_loss,test_acc=model.evaluate(x_test,y_test)
+print(f'Test Loss: {test_loss}')
+print(f'Test Accuracy: {test_acc}')
+
+
+n=random.randint(0,9999)
+plt.imshow(x_test[88])
+
+plt.show()
+predicted_value=model.predict(x_test)
+plt.imshow(x_test[6])
+plt.show()
+
+print('Predicted value:',predicted_value[n])
+
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('model_accuracy')
+plt.ylabel('accracy')
+plt.xlabel('epoch')
+plt.legend(['Train','Validation'],loc='upper right')
+plt.show()
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('model_loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['Train','Validation'],loc='upper right')
+plt.show()

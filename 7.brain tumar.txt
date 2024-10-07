@@ -1,0 +1,143 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+import os
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras.optimizers import Adam
+from keras.callbacks import EarlyStopping
+from tensorflow.keras.preprocessing import image  # Import the image functions
+import numpy as np
+
+
+# Set your dataset path
+dataset_path = 'C:\\Users\\sd616\\Downloads\\bt'  
+# dataset_path = '/home/username/Downloads/archive 3/'  # Linux or Mac
+
+# Define image dimensions
+img_width, img_height = 150, 150
+
+# Create ImageDataGenerator for training and testing
+train_datagen = ImageDataGenerator(rescale=1.0/255.0)
+test_datagen = ImageDataGenerator(rescale=1.0/255.0)
+
+# Load training data
+train_data = train_datagen.flow_from_directory(
+    os.path.join(dataset_path, 'training'),
+    target_size=(img_width, img_height),
+    batch_size=32,
+    class_mode='categorical'
+)
+
+# Load testing data
+test_data = test_datagen.flow_from_directory(
+    os.path.join(dataset_path, 'testing'),
+    target_size=(img_width, img_height),
+    batch_size=32,
+    class_mode='categorical'
+)
+
+
+
+# Define the CNN model
+model = Sequential()
+
+# First convolutional layer
+model.add(Conv2D(32, (3, 3), input_shape=(150, 150, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+# Second convolutional layer
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+# Third convolutional layer
+model.add(Conv2D(128, (3, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+# Flatten layer
+model.add(Flatten())
+
+# Fully connected layer
+model.add(Dense(128, activation='relu'))
+model.add(Dropout(0.5))  # Dropout to avoid overfitting
+
+# Output layer (4 classes for tumor types)
+model.add(Dense(4, activation='softmax'))
+
+
+ Compile the model
+model.compile(optimizer='adam', 
+              loss='categorical_crossentropy', 
+              metrics=['accuracy'])
+# Train the model with automatic steps_per_epoch
+history = model.fit(
+    train_data,
+    validation_data=test_data,
+    epochs=10  # You can adjust the number of epochs
+)
+
+# Evaluate the model on the test data
+test_loss, test_acc = model.evaluate(test_data)
+print(f"Test Accuracy: {test_acc}")
+
+
+
+# Make predictions
+predictions = model.predict(test_data)
+
+# Print the predicted class for the first batch of images
+predicted_classes = tf.argmax(predictions, axis=1)
+print(predicted_classes)
+
+
+import matplotlib.pyplot as plt
+
+# Plot training & validation accuracy values
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc='upper left')
+plt.show()
+
+# Plot training & validation loss values
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc='upper left')
+plt.show()
+
+
+def preprocess_image(img_path, img_width, img_height):
+    img = image.load_img(img_path, target_size=(img_width, img_height))  # Load and resize image
+    img_array = image.img_to_array(img)  # Convert image to array
+    img_array = np.expand_dims(img_array, axis=0)  # Add a batch dimension
+    img_array /= 255.0  # Normalize the image
+    return img_array
+
+img_path = r'C:\\Users\\sd616\\Downloads\\bt\\Training\\meningioma_tumor\m3 (9).jpg'
+preprocessed_img = preprocess_image(img_path, img_width, img_height)
+
+plt.imshow(image.load_img(img_path, target_size=(img_width, img_height)))
+plt.axis('off')  # Turn off axis
+plt.show()
+
+# Make predictions
+prediction = model.predict(preprocessed_img)
+
+# Get the predicted class index
+predicted_class = np.argmax(prediction, axis=1)
+
+# Class labels
+class_labels = ['glioma_tumor', 'meningioma_tumor', 'pituitary_tumor', 'no_tumor']
+
+# Get the class label for the predicted class
+predicted_label = class_labels[predicted_class[0]]
+
+# Output the prediction
+print(f'The model predicts: {predicted_label}')

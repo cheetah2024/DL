@@ -1,0 +1,80 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import keras
+import tensorflow as tf
+from keras.models import Sequential
+from keras.layers import Flatten, Dense
+import random
+%matplotlib inline
+
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.fashion_mnist.load_data()
+
+
+print("the shape of x_train is: {} and y_train is:{}".format(x_train.shape,y_train.shape))
+print("the shape of x_test is: {} and y_test is:{}".format(x_test.shape,y_test.shape))
+
+x_train[0]
+
+class_labels = ["Trouser", "Pullover", "Dress", "Coat", "Sandal", "Shirt", "Sneaker"]
+class_labels
+
+plt.imshow(x_train[0], cmap="Greys")
+
+x_train.shape
+
+plt.figure(figsize=(16,16))
+j=1
+for i in np.random.randint(0,1000,25):
+    plt.subplot(5,5,j)
+    j+=1
+    plt.imshow(x_train[i], cmap = "Greys")
+    plt.axis('off')
+plt.title('{} / {}' .format(class_labels[y_train[i]],y_train[i]))
+
+
+x_train.ndim
+
+x_train = np.expand_dims(x_train, -1)
+x_test = np.expand_dims(x_test, -1)
+
+x_train = x_train/255
+x_test = x_test/255
+
+from sklearn.model_selection import train_test_split
+x_train, x_validation, y_train, y_validation = train_test_split(x_train, y_train)
+
+x_train.shape, y_train.shape, x_validation.shape, y_validation.shap
+
+cnn = keras.models.Sequential([
+    tf.keras.layers.Conv2D(filters=32, kernel_size=3,strides=(1,1),padding='valid',activation='relu', input_shape=(28,28,1)),
+    tf.keras.layers.MaxPooling2D((2,2)),
+    tf.keras.layers.Conv2D(filters=64, kernel_size=3, strides=(2,2),padding='same', activation='relu'),
+    tf.keras.layers.MaxPooling2D((2,2)),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(128,activation='relu'),
+    tf.keras.layers.Dropout(0.25),
+    tf.keras.layers.Dense(256,activation='relu'),
+    tf.keras.layers.Dropout(0.25),
+    tf.keras.layers.Dense(128,activation='relu'),
+    tf.keras.layers.Dense(10,activation='softmax'),
+])
+
+cnn.compile(optimizer='adam', 
+            loss='sparse_categorical_crossentropy', 
+            metrics=['accuracy'])
+
+cnn.fit(x_train, y_train, epochs=20, batch_size=16, verbose=1, validation_data=(x_validation, y_validation))
+
+y_pred = cnn.predict(x_test)
+
+cnn.evaluate(x_test, y_test)
+
+plt.figure(figsize=(16,16))
+j=1
+for i in np.random.randint(0,1000,25):
+    plt.subplot(5,5,j)
+j+=1
+plt.imshow(x_train[i], cmap="Greys")
+plt.axis('off')
+plt.title('{} / {}' .format(class_labels[y_train[i]],y_train[i]))
+

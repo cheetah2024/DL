@@ -1,0 +1,112 @@
+import os
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import layers, models
+from tensorflow.keras.optimizers import Adam
+import matplotlib.pyplot as plt
+import numpy as np
+from tensorflow.keras.preprocessing import image 
+
+train_dir = 'C:\\Users\\sd616\\Downloads\\sp\\chest_xray\\train'
+val_dir = 'C:\\Users\\sd616\\Downloads\\sp\\chest_xray\\val'
+test_dir = 'C:\\Users\\sd616\\Downloads\\sp\\chest_xray\\test'
+
+train_datagen = ImageDataGenerator(
+    rescale=1./255,   # Normalize pixel values to [0, 1]
+    shear_range=0.2,  # Random shear
+    zoom_range=0.2,   # Random zoom
+    horizontal_flip=True  # Randomly flip images
+)
+
+val_datagen = ImageDataGenerator(rescale=1./255)
+
+train_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(150, 150),  # Resize all images to 150x150
+    batch_size=32,           # Process 32 images at a time
+    class_mode='binary'      # Binary classification: pneumonia or normal
+)
+
+
+model = models.Sequential()
+
+# First convolutional layer
+model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(150, 150, 3)))
+model.add(layers.MaxPooling2D((2, 2)))
+
+# Second convolutional layer
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+
+# Third convolutional layer
+model.add(layers.Conv2D(128, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+
+# Flatten the results to feed into a dense layer
+model.add(layers.Flatten())
+
+# Fully connected layer
+model.add(layers.Dense(128, activation='relu'))
+
+# Output layer (binary classification)
+model.add(layers.Dense(1, activation='sigmoid'))
+
+
+model.compile(
+    optimizer=Adam(),
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)test_datagen = ImageDataGenerator(rescale=1./255)
+
+test_generator = test_datagen.flow_from_directory(
+    test_dir,
+    target_size=(150, 150),
+    batch_size=32,
+    class_mode='binary'
+)
+
+test_loss, test_acc = model.evaluate(test_generator)
+print(f"Test accuracy: {test_acc}")
+
+x_batch, y_batch = next(train_generator)
+
+# Plotting the images in the batch
+plt.figure(figsize=(10, 10))
+
+for i in range(11):  # Display 9 images
+    plt.subplot(4,5 , i + 1)
+    plt.imshow(x_batch[i])
+    plt.title('Pneumonia' if y_batch[i] == 1 else 'Normal')
+    plt.axis('off')
+
+plt.tight_layout()
+plt.show()
+
+def load_and_preprocess_image(img_path):
+    img = image.load_img(img_path, target_size=(150, 150))  # Resize image to match model input size
+    img_array = image.img_to_array(img)  # Convert image to array
+    img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension (1, 150, 150, 3)
+    img_array /= 255.0  # Rescale pixel values to [0, 1]
+    return img_array
+
+img_path ='C:\\Users\\sd616\\Downloads\\sp\\chest_xray\\train\\PNEUMONIA\\person9_bacteria_38.jpeg'
+
+img_array = load_and_preprocess_image(img_path)
+
+# Make a prediction
+prediction = model.predict(img_array)
+
+# Output prediction result
+if prediction[0] > 0.5:
+    print("Pneumonia affected")
+else:
+    print("Normal")
+
+history = model.fit(
+    train_generator,
+    steps_per_epoch=train_generator.samples // train_generator.batch_size,
+    epochs=4,  # Set to a higher value for better results
+    validation_data=val_generator,
+    validation_steps=val_generator.samples // val_generator.batch_size
+)
+

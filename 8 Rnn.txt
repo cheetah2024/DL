@@ -1,0 +1,64 @@
+##Using numpy
+
+import numpy as np
+
+# Activation functions and derivatives
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+# Initialize weights
+Wxh = np.random.randn(10, 5)  # Input to hidden weights
+Whh = np.random.randn(10, 10) # Hidden to hidden weights
+Why = np.random.randn(1, 10)  # Hidden to output weights
+
+bh = np.zeros((10, 1))        # Hidden bias
+by = np.zeros((1, 1))         # Output bias
+
+# Initial hidden state
+h = np.zeros((10, 1))
+
+# Forward pass
+def rnn_step(X, h):
+    h = sigmoid(np.dot(Wxh, X) + np.dot(Whh, h) + bh)  # Update hidden state
+    y = np.dot(Why, h) + by  # Compute output
+    return h, y
+
+# Dummy input sequence
+X = [np.random.randn(5, 1) for _ in range(6)]  # 6 time steps of 5-dimensional input
+
+# Process each time step
+for t in range(len(X)):
+    h, y = rnn_step(X[t], h)
+    print(f"Time step {t}, Output: {y}")
+
+
+
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import SimpleRNN, Dense
+
+# Define a Sequential model
+model = Sequential()
+
+# Add an RNN layer (input_size = 5, hidden_size = 10)
+model.add(SimpleRNN(10, input_shape=(None, 5)))
+
+# Add a Dense output layer
+model.add(Dense(1))  # output_size = 1
+
+# Compile the model
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+# Generate dummy data
+X = tf.random.normal([1, 6, 5])  # (batch_size, sequence_length, input_size)
+y = tf.random.normal([1, 1])     # (batch_size, output_size)
+
+# Train the model
+model.fit(X, y, epochs=10)
+
+# Predict using the model
+output = model.predict(X)
+print(output)
